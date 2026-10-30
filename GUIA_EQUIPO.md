@@ -101,10 +101,20 @@ video) y el modelo entrenado.
 
 ## Parte 3 — Extrae características y entrena
 
+**Por qué este orden importa:** tus videos nunca se suben a GitHub (son
+pesados y es tu imagen) — lo único que viaja por GitHub es
+`data/caracteristicas/<ejercicio>.csv`, que son solo números (una fila por
+repetición). Como tú nunca tienes en tu máquina los videos de tus
+compañeros, `extraer` NO reescribe el CSV completo: conserva las filas de
+quien no tengas localmente y solo recalcula las tuyas. Pero para que eso
+funcione, necesitas partir del CSV más reciente — por eso el `git pull` va
+**primero**, antes de extraer.
+
 ```powershell
-.venv\Scripts\python Evaluador_Ejercicios.py extraer      # tus videos -> data/caracteristicas/<ejercicio>.csv
-.venv\Scripts\python Evaluador_Ejercicios.py entrenar     # entrena los 3 MLP
-.venv\Scripts\python Evaluador_Ejercicios.py evaluar      # revisa métricas y matriz de confusión en salidas/
+git pull                                                   # trae las características más recientes del equipo
+.venv\Scripts\python Evaluador_Ejercicios.py extraer       # tus videos -> se fusionan con el CSV del equipo
+.venv\Scripts\python Evaluador_Ejercicios.py entrenar      # entrena los 3 MLP con TODO el CSV (tú + equipo)
+.venv\Scripts\python Evaluador_Ejercicios.py evaluar       # revisa métricas y matriz de confusión en salidas/
 ```
 
 `extraer` imprime cuántas repeticiones detectó por video — si un video de
@@ -115,6 +125,9 @@ grupo para ajustarlos juntos, no cada quien por su lado.
 
 `entrenar` avisa si todavía falta alguna etiqueta o si hay muy pocas
 personas — es normal al principio, mientras el equipo va subiendo videos.
+El modelo que entrena cada quien ya incluye los datos de todo el equipo
+que esté en el CSV al momento de entrenar, aunque los videos en sí nunca
+salgan de la compu de cada quien.
 
 Para compartir tu aporte:
 
@@ -124,8 +137,10 @@ git commit -m "Agrega características y reentrena con los videos de <tu nombre>
 git push
 ```
 
-Que el resto haga `git pull` antes de su propio `entrenar`, para entrenar
-siempre sobre los datos más recientes de todo el equipo.
+Si entre tu `git pull` y tu `git push` alguien más ya subió su parte, Git
+va a pedir que hagas `git pull` otra vez antes de dejarte subir (conflicto
+normal) — vuelve a correr `extraer` y `entrenar` después de ese segundo
+pull para no perder lo que acaba de subir esa persona.
 
 ---
 
