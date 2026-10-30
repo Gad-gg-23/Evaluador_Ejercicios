@@ -1,8 +1,8 @@
 # Guía paso a paso — Evaluador de ejercicios (ESCOM)
 
 Esta guía es para **cualquier integrante del equipo** que vaya a grabar
-videos, entrenar, o probar el evaluador en vivo. No hace falta cuenta de
-Kaggle ni de Hugging Face para esta práctica — solo Python y una cámara.
+videos, entrenar, o probar el evaluador en vivo. No hace falta cuenta en
+ningún servicio externo — solo Python y una cámara.
 
 ## Resumen ultra-corto
 
@@ -16,8 +16,8 @@ Cada quien:  graba repeticiones correctas + repeticiones con cada error (adrede)
 
 ## Parte 1 — Prepara tu máquina (una sola vez)
 
-MediaPipe **no soporta Python 3.14 todavía**, así que esta práctica usa
-Python 3.11 aparte (no el que uses en las demás prácticas si ese es 3.14).
+MediaPipe **no soporta Python 3.14 todavía**, así que esta práctica
+necesita Python 3.11 (revisa con `py -0p` qué versiones tienes instaladas).
 
 ```powershell
 py -3.11 -m venv .venv
@@ -66,6 +66,34 @@ graba varias series cortas (5-8 repeticiones) así:
 Entre más personas graben las 4 (o 3) etiquetas de un ejercicio, más
 fácil es para el modelo aprender a distinguirlas — no dejes que una sola
 persona grabe "todo lo malo" y otra "todo lo bueno".
+
+### 2.2.1 ¿Cuántos videos grabo?
+
+**Antes de que todo el equipo grabe en serio, que una sola persona grabe
+un piloto:** 1 serie de cada etiqueta de un solo ejercicio (ej.
+sentadillas) y corra `extraer` (Parte 3). Los umbrales que detectan dónde
+empieza/termina una repetición (`config.py`) todavía no están calibrados
+con cámara real — mejor descubrir ahí si hay que ajustarlos que que las
+otras 4 personas repitan el mismo problema.
+
+Ya calibrado, la meta por persona es:
+
+| | Cantidad |
+|---|---|
+| Ejercicios × etiquetas | 3 ejercicios × 4 etiquetas = 12 combinaciones |
+| Series por combinación | **mínimo 2** series de 6-8 repeticiones cada una |
+| Videos por persona | 24 (12 combinaciones × 2 series) |
+| Videos del equipo (5 personas) | ≈120 en total |
+
+¿Por qué mínimo 2 y no 1? Con una sola serie por etiqueta, si esa
+grabación sale rara (mala luz, ángulo raro, una repetición atípica), esa
+etiqueta completa de esa persona queda con un solo dato de apoyo. Con 2
+series ya hay algo de variación aunque sea de la misma persona el mismo
+día. No tiene que ser exacto — si alguien graba 1 o 3 de alguna etiqueta
+no pasa nada — pero que nadie se quede en 1 sola serie por etiqueta, y que
+**las 5 personas aporten las 4 etiquetas**, no que una sola grabe "todo lo
+malo" y el resto solo "correcto" (si no, el modelo aprende a distinguir
+personas, no técnica).
 
 Equipo necesario: **ninguno** para lagartijas/sentadillas. Para curl de
 bíceps, algo de peso (garrafón, mochila con libros, botellas con agua) —

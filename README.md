@@ -132,7 +132,6 @@ Cada subcomando acepta `--ejercicio {lagartijas,sentadillas,curl_biceps}`
 para correr sobre uno solo en vez de los 3 (`tiempo-real` lo requiere
 siempre, porque hay que decirle a la cámara qué ejercicio esperar).
 
-No hay notebook de Colab para esta práctica: a diferencia de
-`Frutas_Verduras`/`Traductor` (redes grandes, necesitan GPU), aquí el MLP
-entrena sobre un puñado de números por repetición — toma segundos en CPU,
-así que no hace falta GPU gratuita ni notebook aparte.
+No hay notebook de Colab para esta práctica: el MLP entrena sobre un
+puñado de números por repetición — toma segundos en CPU, así que no hace
+falta GPU gratuita ni notebook aparte.

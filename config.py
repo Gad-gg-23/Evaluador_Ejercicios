@@ -135,10 +135,11 @@ TASA_APRENDIZAJE = 1e-3
 PACIENCIA_EARLY_STOPPING = 20
 RANDOM_STATE = 42
 
-# Reparto de datos: agrupado por VIDEO (no por repetición), para que las
-# repeticiones de un mismo video/persona no queden a la vez en train y en
-# prueba (misma fuga de datos que ya se detectó en la práctica de
-# Temperatura: "fuga" cuando ejemplos muy parecidos quedan en ambos lados).
+# Reparto de datos: agrupado por PERSONA, no por repetición individual, para
+# que las repeticiones de una misma persona no queden a la vez en train y en
+# prueba ("fuga" de datos: ejemplos muy parecidos -mismo cuerpo, misma
+# cámara, mismo día- en ambos lados inflarían las métricas sin que el
+# modelo esté generalizando de verdad).
 FRACCION_VALIDACION = 0.15
 FRACCION_PRUEBA = 0.15
 

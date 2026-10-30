@@ -5,9 +5,10 @@ escalador (media/desviación) + el orden de columnas y etiquetas en
 salidas/modelo_<ejercicio>.pt.
 
 División train/validación/prueba AGRUPADA POR PERSONA: las repeticiones de
-un mismo integrante del equipo quedan todas del mismo lado, para no repetir
-la fuga de datos que ya se detectó en la práctica de Temperatura (ahí,
-mediciones muy parecidas terminaban a la vez en entrenamiento y en prueba).
+un mismo integrante del equipo quedan todas del mismo lado, para evitar
+fuga de datos (si las repeticiones de una misma persona quedan repartidas
+entre entrenamiento y prueba, las métricas salen infladas sin que el
+modelo esté generalizando de verdad a cuerpos que no ha visto).
 Si hay menos de 3 personas todavía, se usa una división aleatoria simple
 nada más para poder probar el pipeline -- no hay que confiar en esas
 métricas hasta tener más gente.
