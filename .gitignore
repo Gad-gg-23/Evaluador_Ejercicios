@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Videos del equipo: pesan mucho y son datos personales, no van a GitHub.
+data/propios/
+data/mendeley_bruto/
+
+# Modelo de MediaPipe Pose: se descarga solo (ver pose_utils.descargar_modelo_mediapipe).
+modelos_mediapipe/
