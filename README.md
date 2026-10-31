@@ -62,11 +62,16 @@ cadera caída, no bajar lo suficiente, codo que se adelanta, etc.).
   piso) y con buena luz. Es justo lo que ya anotó el póster con lo de
   "lado lejano" y la variante de rodillas apoyadas.
 - **Los umbrales de ángulo para detectar dónde empieza/termina cada
-  repetición** (`umbral_superior`/`umbral_inferior` en `config.py`) son
-  valores de referencia (literatura de biomecánica), **no están calibrados
-  con videos reales todavía**. En cuanto haya grabaciones del equipo, hay
-  que revisarlos (imprimir el ángulo por frame de un video y ver dónde
-  debería cortar cada repetición) y ajustarlos si hace falta.
+  repetición** (`umbral_superior`/`umbral_inferior` en `config.py`) se
+  revisan con las grabaciones reales del equipo conforme van llegando.
+  Lagartijas ya se recalibró con las primeras grabaciones (el valor de
+  referencia original, 110°, era demasiado estricto y dejaba fuera
+  repeticiones válidas, sobre todo las de `no_bajar_suficiente`; ver el
+  commit que subió ese ajuste). Sentadillas y curl de bíceps siguen con el
+  valor de referencia inicial (funcionó bien con la primera persona, pero
+  puede necesitar ajuste con más gente) — si a alguien del equipo le
+  detecta muy pocas repeticiones en un video que sí tiene varias, avisen en
+  el grupo antes de cambiar el umbral por su cuenta.
 - **El codo "se adelanta" en el curl se mide en 2D (desplazamiento
   horizontal en la imagen), no en profundidad real.** MediaPipe sí da una
   z aproximada, pero es menos confiable que x/y con una sola cámara; en

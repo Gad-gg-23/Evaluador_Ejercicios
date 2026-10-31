@@ -69,14 +69,16 @@ persona grabe "todo lo malo" y otra "todo lo bueno".
 
 ### 2.2.1 ¿Cuántos videos grabo?
 
-**Antes de que todo el equipo grabe en serio, que una sola persona grabe
-un piloto:** 1 serie de cada etiqueta de un solo ejercicio (ej.
-sentadillas) y corra `extraer` (Parte 3). Los umbrales que detectan dónde
-empieza/termina una repetición (`config.py`) todavía no están calibrados
-con cámara real — mejor descubrir ahí si hay que ajustarlos que que las
-otras 4 personas repitan el mismo problema.
+**El piloto que hizo Gadiel ya sirvió para esto**: con sus primeras
+grabaciones se encontró que el umbral de lagartijas estaba mal calibrado
+(dejaba varios videos en 0 repeticiones detectadas) y ya se corrigió en
+`config.py`. Si al correr `extraer` te sale un video con muchas menos
+repeticiones de las que grabaste, no es necesariamente tu culpa — avisa en
+el grupo con el nombre del video antes de volver a grabar, puede ser el
+umbral otra vez (pasa más fácil con gente de estatura/brazos muy distintos
+a los ya probados).
 
-Ya calibrado, la meta por persona es:
+La meta por persona es:
 
 | | Cantidad |
 |---|---|
