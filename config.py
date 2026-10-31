@@ -71,20 +71,30 @@ PUNTOS = {
 #   póster. Deben coincidir exactamente con los nombres de carpeta en
 #   data/propios/<ejercicio>/.
 
+# Nota: la clasificación correcto/error la hace la red entrenada (modelo.py) a
+# partir de las características agregadas de cada repetición -- no hay reglas de
+# umbral fijo tipo "si el ángulo mínimo es mayor a X, es error Y". Los únicos
+# umbrales de este archivo son umbral_superior/umbral_inferior, que solo sirven
+# para SEGMENTAR dónde empieza y termina cada repetición.
+
 EJERCICIOS = {
     "lagartijas": {
         "nombre_legible": "Lagartijas",
         "angulo_rep": ("hombro", "codo", "muneca"),
+        # Calibrado con las grabaciones reales del equipo (ver diagnóstico en
+        # el commit que ajustó estos valores): el ángulo del codo en el punto
+        # más bajo varió entre 90° y 149° según la toma -- mucho más alto de
+        # lo que asumía el valor de referencia inicial (110°), que dejaba
+        # fuera repeticiones válidas y, por diseño, TODAS las de
+        # no_bajar_suficiente (su .angulo mínimo nunca iba a bajar tanto).
         "umbral_superior": 160.0,
-        "umbral_inferior": 110.0,
+        "umbral_inferior": 150.0,
         "angulos_clave": {
             "codo": ("hombro", "codo", "muneca"),
             "alineacion_cadera": ("hombro", "cadera", "tobillo"),
         },
         "senales_especiales": ["desviacion_cadera"],
         "etiquetas": ["correcto", "cadera_caida", "cadera_elevada", "no_bajar_suficiente"],
-        "umbral_profundidad_codo": 100.0,  # codo mínimo > esto => no bajó lo suficiente
-        "umbral_desviacion_cadera": 0.12,  # desviación perpendicular normalizada hombro-tobillo
     },
     "sentadillas": {
         "nombre_legible": "Sentadillas",
@@ -96,9 +106,6 @@ EJERCICIOS = {
         },
         "senales_especiales": ["inclinacion_tronco", "talon_y_norm"],
         "etiquetas": ["correcto", "no_bajar_suficiente", "inclinarse_demasiado", "talones_levantados"],
-        "umbral_profundidad_rodilla": 100.0,  # rodilla mínima > esto => no bajó lo suficiente
-        "umbral_inclinacion_tronco": 45.0,  # grados respecto a la vertical, máximo aceptable
-        "umbral_despegue_talon": 0.03,  # alza relativa del talón (normalizada por alto de pierna)
         # "rodillas hacia adentro" del póster requiere toma FRONTAL (valgo de rodilla no se
         # ve en vista lateral) y queda fuera de esta primera versión -- ver README, sección
         # "Decisiones y limitaciones".
@@ -113,9 +120,6 @@ EJERCICIOS = {
         },
         "senales_especiales": ["inclinacion_tronco", "codo_x_norm"],
         "etiquetas": ["correcto", "balancear_torso", "codo_se_adelanta", "no_completar_movimiento"],
-        "umbral_rom_insuficiente": 90.0,  # codo mínimo > esto => no completó el movimiento
-        "umbral_balanceo_tronco": 10.0,  # rango (max-min) del ángulo de tronco durante la rep
-        "umbral_desplazamiento_codo": 0.08,  # desplazamiento horizontal del codo normalizado
     },
 }
 

@@ -38,6 +38,7 @@ EXTENSIONES_VIDEO = {".mp4", ".mov", ".avi", ".mkv"}
 
 def procesar_video(detector, ruta_video, ejercicio):
     """Regresa la lista de repeticiones (cada una: dict de características) detectadas en el video."""
+    detector.reiniciar()  # cada video cuenta sus propios timestamps desde 0
     cfg = config.EJERCICIOS[ejercicio]
     captura = cv2.VideoCapture(str(ruta_video))
     fps = captura.get(cv2.CAP_PROP_FPS) or 30.0

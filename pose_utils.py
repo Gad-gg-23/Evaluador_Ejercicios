@@ -22,7 +22,13 @@ def descargar_modelo_mediapipe():
 
 
 class DetectorPose:
-    """Detecta los 33 landmarks de MediaPipe Pose en modo VIDEO (frame a frame, con timestamps)."""
+    """
+    Detecta los 33 landmarks de MediaPipe Pose en modo VIDEO (frame a frame,
+    con timestamps). El modo VIDEO de MediaPipe exige timestamps
+    estrictamente crecientes durante toda la vida del detector -- por eso
+    hay que llamar a reiniciar() antes de procesar un video nuevo (cada
+    video vuelve a contar sus propios timestamps desde 0).
+    """
 
     def __init__(self):
         # Import diferido: mediapipe es pesado de importar y solo lo necesitan
@@ -32,13 +38,19 @@ class DetectorPose:
 
         descargar_modelo_mediapipe()
 
-        opciones = vision.PoseLandmarkerOptions(
+        self._mp = mp
+        self._vision = vision
+        self._opciones = vision.PoseLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=str(config.MEDIAPIPE_MODELO_PATH)),
             running_mode=vision.RunningMode.VIDEO,
             num_poses=1,
         )
-        self._mp = mp
-        self._landmarker = vision.PoseLandmarker.create_from_options(opciones)
+        self._landmarker = self._vision.PoseLandmarker.create_from_options(self._opciones)
+
+    def reiniciar(self):
+        """Hay que llamarlo antes de cada video nuevo (ver nota de la clase)."""
+        self._landmarker.close()
+        self._landmarker = self._vision.PoseLandmarker.create_from_options(self._opciones)
 
     def detectar(self, frame_bgr, timestamp_ms: int):
         """Regresa la lista de 33 landmarks (x, y, z, visibility) o None si no detectó a nadie."""
