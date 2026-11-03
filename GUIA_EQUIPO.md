@@ -69,14 +69,13 @@ persona grabe "todo lo malo" y otra "todo lo bueno".
 
 ### 2.2.1 ¿Cuántos videos grabo?
 
-**El piloto que hizo Gadiel ya sirvió para esto**: con sus primeras
-grabaciones se encontró que el umbral de lagartijas estaba mal calibrado
-(dejaba varios videos en 0 repeticiones detectadas) y ya se corrigió en
-`config.py`. Si al correr `extraer` te sale un video con muchas menos
-repeticiones de las que grabaste, no es necesariamente tu culpa — avisa en
-el grupo con el nombre del video antes de volver a grabar, puede ser el
-umbral otra vez (pasa más fácil con gente de estatura/brazos muy distintos
-a los ya probados).
+**Los pilotos de Gadiel y Diego ya sirvieron para esto**: con sus
+grabaciones se encontró que el umbral de repetición estaba mal calibrado
+(dejaba varios videos en 0 o muy pocas repeticiones detectadas) y de hecho
+se cambió la forma de detectarlas (de un ángulo absoluto a una caída
+relativa, ver README). Si al correr `extraer` te sale un video con muchas
+menos repeticiones de las que grabaste, no es necesariamente tu culpa —
+avisa en el grupo con el nombre del video antes de volver a grabar.
 
 La meta por persona es:
 
@@ -148,10 +147,11 @@ git pull                                                   # trae las caracterí
 ```
 
 `extraer` imprime cuántas repeticiones detectó por video — si un video de
-8 repeticiones solo detecta 2 o 3, probablemente los umbrales de
-`config.py` (`umbral_superior`/`umbral_inferior` de ese ejercicio) no
-cuadran con tu ángulo de cámara o tu rango de movimiento; avisa en el
-grupo para ajustarlos juntos, no cada quien por su lado.
+8 repeticiones solo detecta 2 o 3, probablemente `caida_minima_grados` de
+ese ejercicio en `config.py` no cuadra con tu rango de movimiento; avisa en
+el grupo para ajustarlo juntos, no cada quien por su lado (ya pasó con los
+primeros 2 integrantes que subieron video: el mismo valor no le quedaba
+bien a los dos).
 
 `entrenar` avisa si todavía falta alguna etiqueta o si hay muy pocas
 personas — es normal al principio, mientras el equipo va subiendo videos.

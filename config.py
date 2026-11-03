@@ -61,10 +61,14 @@ PUNTOS = {
 # =========================================================
 # angulo_rep: (p1, vertice, p3) usado para segmentar repeticiones (detecta el
 #   "valle" de una repetición: flexión -> extensión).
-# umbral_superior / umbral_inferior: histéresis en grados para marcar
-#   inicio/fin de una repetición. Son valores de referencia biomecánica
-#   (no calibrados con los videos del equipo todavía) -- AJUSTAR cuando haya
-#   grabaciones reales, ver notas en GUIA_EQUIPO.md.
+# caida_minima_grados: cuántos grados tiene que bajar el ángulo de
+#   segmentación desde su último pico (y volver a subir esos mismos grados)
+#   para contar como una repetición. Es relativo, no un ángulo absoluto --
+#   ver segmentacion.py para la razón (el ángulo mínimo real de una
+#   repetición depende de cada persona/cámara, un umbral absoluto dejaba
+#   fuera repeticiones válidas de gente con proporciones distintas). Son
+#   valores iniciales; se ajustan conforme lleguen más grabaciones del
+#   equipo, ver notas en GUIA_EQUIPO.md.
 # angulos_clave: ángulos (aparte del de segmentación) que se calculan por
 #   frame y se agregan (min/max/media/rango) como características.
 # etiquetas: "correcto" siempre al índice 0; el resto son los errores del
@@ -73,22 +77,15 @@ PUNTOS = {
 
 # Nota: la clasificación correcto/error la hace la red entrenada (modelo.py) a
 # partir de las características agregadas de cada repetición -- no hay reglas de
-# umbral fijo tipo "si el ángulo mínimo es mayor a X, es error Y". Los únicos
-# umbrales de este archivo son umbral_superior/umbral_inferior, que solo sirven
-# para SEGMENTAR dónde empieza y termina cada repetición.
+# umbral fijo tipo "si el ángulo mínimo es mayor a X, es error Y". El único
+# umbral de este archivo es caida_minima_grados, que solo sirve para SEGMENTAR
+# dónde empieza y termina cada repetición (no para juzgar si salió bien).
 
 EJERCICIOS = {
     "lagartijas": {
         "nombre_legible": "Lagartijas",
         "angulo_rep": ("hombro", "codo", "muneca"),
-        # Calibrado con las grabaciones reales del equipo (ver diagnóstico en
-        # el commit que ajustó estos valores): el ángulo del codo en el punto
-        # más bajo varió entre 90° y 149° según la toma -- mucho más alto de
-        # lo que asumía el valor de referencia inicial (110°), que dejaba
-        # fuera repeticiones válidas y, por diseño, TODAS las de
-        # no_bajar_suficiente (su .angulo mínimo nunca iba a bajar tanto).
-        "umbral_superior": 160.0,
-        "umbral_inferior": 150.0,
+        "caida_minima_grados": 20.0,
         "angulos_clave": {
             "codo": ("hombro", "codo", "muneca"),
             "alineacion_cadera": ("hombro", "cadera", "tobillo"),
@@ -99,8 +96,7 @@ EJERCICIOS = {
     "sentadillas": {
         "nombre_legible": "Sentadillas",
         "angulo_rep": ("cadera", "rodilla", "tobillo"),
-        "umbral_superior": 165.0,
-        "umbral_inferior": 120.0,
+        "caida_minima_grados": 30.0,
         "angulos_clave": {
             "rodilla": ("cadera", "rodilla", "tobillo"),
         },
@@ -113,8 +109,7 @@ EJERCICIOS = {
     "curl_biceps": {
         "nombre_legible": "Curl de bíceps",
         "angulo_rep": ("hombro", "codo", "muneca"),
-        "umbral_superior": 150.0,
-        "umbral_inferior": 70.0,
+        "caida_minima_grados": 35.0,
         "angulos_clave": {
             "codo": ("hombro", "codo", "muneca"),
         },

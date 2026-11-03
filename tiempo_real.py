@@ -85,7 +85,7 @@ def main():
     red, paquete = cargar_modelo(ejercicio)
 
     detector = pose_utils.DetectorPose()
-    segmentador = segmentacion.SegmentadorRepeticiones(cfg["umbral_superior"], cfg["umbral_inferior"])
+    segmentador = segmentacion.SegmentadorRepeticiones(cfg["caida_minima_grados"])
     captura = cv2.VideoCapture(args.camara)
 
     ultima_etiqueta, ultima_confianza = "-", 0.0

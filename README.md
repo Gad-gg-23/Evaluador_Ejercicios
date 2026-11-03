@@ -61,17 +61,21 @@ cadera caída, no bajar lo suficiente, codo que se adelanta, etc.).
   ejercicios (de pie). Ayuda grabar un poco en diagonal (no al ras del
   piso) y con buena luz. Es justo lo que ya anotó el póster con lo de
   "lado lejano" y la variante de rodillas apoyadas.
-- **Los umbrales de ángulo para detectar dónde empieza/termina cada
-  repetición** (`umbral_superior`/`umbral_inferior` en `config.py`) se
-  revisan con las grabaciones reales del equipo conforme van llegando.
-  Lagartijas ya se recalibró con las primeras grabaciones (el valor de
-  referencia original, 110°, era demasiado estricto y dejaba fuera
-  repeticiones válidas, sobre todo las de `no_bajar_suficiente`; ver el
-  commit que subió ese ajuste). Sentadillas y curl de bíceps siguen con el
-  valor de referencia inicial (funcionó bien con la primera persona, pero
-  puede necesitar ajuste con más gente) — si a alguien del equipo le
-  detecta muy pocas repeticiones en un video que sí tiene varias, avisen en
-  el grupo antes de cambiar el umbral por su cuenta.
+- **Cómo se detecta dónde empieza/termina cada repetición**
+  (`caida_minima_grados` en `config.py`, ver `segmentacion.py`): al
+  principio se usaba un umbral de ángulo absoluto ("repetición = el codo
+  bajó de 110°"), pero con las primeras grabaciones del equipo (2
+  personas) se vio que el ángulo mínimo real de una repetición depende
+  mucho del brazo/cuerpo de cada quien — el mismo umbral dejaba fuera
+  repeticiones válidas de una persona (sobre todo las de
+  `no_bajar_suficiente`, que por definición son las más cercanas al punto
+  de partida) mientras funcionaba bien para otra. Se cambió a **caída
+  relativa**: cuenta como repetición cualquier bajada de al menos
+  `caida_minima_grados` desde el último punto más alto, sin importar en
+  qué ángulo absoluto pase eso. Son valores iniciales razonables, no
+  calibrados a fondo todavía — si a alguien del equipo le detecta muy
+  pocas repeticiones en un video que sí tiene varias, avisen en el grupo
+  antes de cambiar el valor por su cuenta.
 - **El codo "se adelanta" en el curl se mide en 2D (desplazamiento
   horizontal en la imagen), no en profundidad real.** MediaPipe sí da una
   z aproximada, pero es menos confiable que x/y con una sola cámara; en

@@ -43,7 +43,7 @@ def procesar_video(detector, ruta_video, ejercicio):
     captura = cv2.VideoCapture(str(ruta_video))
     fps = captura.get(cv2.CAP_PROP_FPS) or 30.0
 
-    segmentador = segmentacion.SegmentadorRepeticiones(cfg["umbral_superior"], cfg["umbral_inferior"])
+    segmentador = segmentacion.SegmentadorRepeticiones(cfg["caida_minima_grados"])
     repeticiones = []
     num_frame = 0
 
