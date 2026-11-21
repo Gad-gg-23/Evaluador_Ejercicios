@@ -65,7 +65,7 @@ def procesar_video(detector, ruta_video, ejercicio):
 
         rep_completa = segmentador.agregar_frame(senales["_angulo_rep"], senales)
         if rep_completa is not None and len(rep_completa) >= 3:
-            repeticiones.append(caracteristicas.agregar_repeticion(rep_completa))
+            repeticiones.append(caracteristicas.agregar_repeticion(rep_completa, ejercicio))
 
     captura.release()
     return repeticiones
@@ -92,7 +92,13 @@ def personas_locales(ejercicio):
 
 def extraer_ejercicio(ejercicio, detector):
     cfg = config.EJERCICIOS[ejercicio]
-    columnas = ["ejercicio", "etiqueta", "persona", "video"] + caracteristicas.columnas_caracteristicas(ejercicio)
+    columnas = (
+        ["ejercicio", "etiqueta", "persona", "video", "version"]
+        + caracteristicas.columnas_caracteristicas(ejercicio)
+        + caracteristicas.columnas_secuencia(ejercicio)
+    )
+    minimo_reps, maximo_reps = config.REPS_POR_VIDEO_ESPERADAS
+    videos_sospechosos = []
 
     personas_propias = personas_locales(ejercicio)
     # se conservan las filas de compañeros (personas que no tenemos en esta máquina);
@@ -112,9 +118,15 @@ def extraer_ejercicio(ejercicio, detector):
             )
             for ruta_video in videos:
                 reps = procesar_video(detector, ruta_video, ejercicio)
-                print(f"  {ejercicio}/{etiqueta}/{persona}/{ruta_video.name}: {len(reps)} repetición(es)")
+                ruta_corta = f"{ejercicio}/{etiqueta}/{persona}/{ruta_video.name}"
+                print(f"  {ruta_corta}: {len(reps)} repetición(es)")
+                if not minimo_reps <= len(reps) <= maximo_reps:
+                    videos_sospechosos.append((ruta_corta, len(reps)))
                 for rep in reps:
-                    fila = {"ejercicio": ejercicio, "etiqueta": etiqueta, "persona": persona, "video": ruta_video.name}
+                    fila = {
+                        "ejercicio": ejercicio, "etiqueta": etiqueta, "persona": persona,
+                        "video": ruta_video.name, "version": config.VERSION_CARACTERISTICAS,
+                    }
                     fila.update(rep)
                     filas.append(fila)
                     filas_propias_nuevas += 1
@@ -122,13 +134,19 @@ def extraer_ejercicio(ejercicio, detector):
     config.RUTA_CARACTERISTICAS.mkdir(parents=True, exist_ok=True)
     ruta_csv = config.RUTA_CARACTERISTICAS / f"{ejercicio}.csv"
     with open(ruta_csv, "w", newline="", encoding="utf-8") as f:
-        escritor = csv.DictWriter(f, fieldnames=columnas)
+        # extrasaction="ignore": filas de compañeros extraídas con una versión
+        # anterior pueden traer columnas que ya no existen (entrenar.py las ignora).
+        escritor = csv.DictWriter(f, fieldnames=columnas, extrasaction="ignore")
         escritor.writeheader()
         escritor.writerows(filas)
     print(
         f"-> {filas_propias_nuevas} repetición(es) propia(s) ({sorted(personas_propias) or 'nadie local'}) "
         f"+ {len(filas) - filas_propias_nuevas} de compañeros ya en el CSV = {len(filas)} en total -> {ruta_csv}"
     )
+    if videos_sospechosos:
+        print(f"  REVISAR (se esperaban {minimo_reps}-{maximo_reps} repeticiones por video):")
+        for ruta_corta, n in videos_sospechosos:
+            print(f"    {ruta_corta}: {n}")
 
 
 def main():

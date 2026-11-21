@@ -22,20 +22,59 @@ cadera caída, no bajar lo suficiente, codo que se adelanta, etc.).
 3. Un **ángulo clave** por ejercicio (codo en lagartijas/curl, rodilla en
    sentadillas) sirve para **segmentar repeticiones**: el ángulo baja a un
    "valle" (flexión) y vuelve a subir (extensión) → eso es una repetición.
-4. De cada repetición se saca un **vector de características agregadas**
-   (mínimo, máximo, media y rango de cada señal durante la repetición — no
-   los frames crudos). Un **MLP pequeño por ejercicio** (PyTorch) clasifica
-   ese vector en `correcto` o uno de los errores del póster.
+4. De cada repetición se sacan dos cosas: un **vector de características
+   agregadas** (mínimo, máximo, media y rango de cada señal) y la
+   **secuencia** de cada señal remuestreada a 20 puntos (la forma del
+   movimiento, independiente de qué tan rápido se hizo). Un **ensamble por
+   ejercicio** (PyTorch) clasifica la repetición en `correcto` o uno de los
+   errores del póster:
+   - una **CNN-1D híbrida** que convoluciona sobre las secuencias y concatena
+     las agregadas antes de la capa final, y
+   - un **MLP** sobre las agregadas;
+   se promedian sus probabilidades.
+
+### Versión 2 de las características (qué se corrigió y por qué)
+
+Con los datos de las 5 personas el primer modelo (MLP sobre agregadas v1)
+no pasaba de F1 ≈ 0.5 en lagartijas y sentadillas. Al revisar las señales
+se encontraron errores de diseño, no falta de datos:
+
+| Problema en v1 | Corrección en v2 |
+|---|---|
+| El signo de la cadera caída/elevada dependía de hacia qué lado miraba la persona en el video. | `desviacion_perpendicular_normalizada` ordena el segmento hombro→tobillo de izquierda a derecha: el signo ya no depende de la orientación. |
+| El desplazamiento del codo (curl) también dependía del lado. | `codo_x_norm` se multiplica por la dirección en la que mira la persona (nariz vs. hombro) y se normaliza por el largo del torso. |
+| "Talón levantado" se medía con una línea base del primer frame, que no existe si la serie empieza ya abajo. | `elevacion_talon` = (pie.y − talón.y) / largo de la espinilla: se compara el talón con la punta del pie en el mismo frame, sin línea base. |
+| La duración en frames dependía de los FPS del celular de cada quien. | Se quitó; la secuencia remuestreada captura el ritmo sin depender de los FPS. |
+| Videos duplicados con otro nombre inflaban clases. | `entrenar` quita repeticiones idénticas. |
+
+Cada fila del CSV lleva `version`; `entrenar` ignora las filas de una
+versión anterior y avisa quién tiene que volver a correr `extraer`.
+
+### Resultados (validación cruzada por serie)
+
+Con los videos de Gadiel (antes de que el resto del equipo reextraiga con
+v2), mismas series, misma partición:
+
+| Ejercicio | v1 (MLP agregadas) | v2 (ensamble CNN-1D + MLP) |
+|---|---|---|
+| Lagartijas | 0.52 | **1.00** |
+| Sentadillas | 0.51 | **0.80** |
+| Curl de bíceps | 0.71 | **0.87** |
+
+Modelos comparados sobre v2 (F1 macro): regresión logística, Random
+Forest, Gradient Boosting, MLP, CNN-1D y el ensamble. El ensamble fue el
+único que quedó entre los mejores en los 3 ejercicios (la CNN-1D sola gana
+en lagartijas/sentadillas, el MLP solo en curl). Estas tablas se
+actualizarán cuando el equipo completo reextraiga.
 
 ### Por qué así y no de otra forma
 
-- **Características por repetición, no frames crudos ni una red
-  convolucional sobre video**: el póster ya redujo el problema a ángulos de
-  articulaciones, que es justo lo que hace manejable entrenar con pocos
-  videos del equipo (a diferencia de una CNN/LSTM sobre píxeles, que
-  necesitaría muchísimos más datos de los que un equipo de estudiantes
-  puede grabar en unas semanas).
-- **Un MLP por ejercicio, no un solo modelo para los 3**: cada ejercicio
+- **Señales de pose por repetición, no píxeles**: el póster ya redujo el
+  problema a ángulos de articulaciones, que es justo lo que hace manejable
+  entrenar con pocos videos del equipo (una CNN/LSTM sobre píxeles
+  necesitaría muchísimos más datos). La CNN-1D trabaja sobre esas señales
+  (≈ 5 canales × 20 puntos), no sobre video, por eso entrena en segundos.
+- **Un modelo por ejercicio, no uno solo para los 3**: cada ejercicio
   tiene su propio conjunto de errores y de ángulos relevantes; mezclarlos en
   una sola salida solo complica el problema sin ninguna ventaja.
 - **Segmentación por repetición, no clasificación frame a frame**: así es
@@ -111,10 +150,10 @@ videos propios con errores específicos, solo los complementa — ver
 | `pose_utils.py` | Wrapper de MediaPipe Pose (Tasks API) y geometría (ángulos, lado visible, desviaciones con signo). |
 | `caracteristicas.py` | Landmarks de un frame → señales del ejercicio; señales de una repetición → vector agregado. |
 | `segmentacion.py` | Máquina de estados que detecta dónde empieza y termina cada repetición. |
-| `modelo.py` | MLP (PyTorch) característica-de-repetición → clase. |
-| `extraer_caracteristicas.py` | `data/propios/.../*.mp4` → `data/caracteristicas/<ejercicio>.csv`. |
-| `entrenar.py` | Entrena el MLP de cada ejercicio (split agrupado por persona, early stopping). |
-| `evaluar.py` | Métricas y matriz de confusión sobre la partición de prueba. |
+| `modelo.py` | Ensamble CNN-1D híbrida + MLP (PyTorch): repetición → clase. |
+| `extraer_caracteristicas.py` | `data/propios/.../*.mp4` → `data/caracteristicas/<ejercicio>.csv` (avisa videos con conteo de repeticiones raro). |
+| `entrenar.py` | Entrena el modelo final de cada ejercicio con todas las repeticiones (lo que usa `tiempo-real`). |
+| `evaluar.py` | Validación cruzada agrupada por serie (o `--por-persona`): reporte por clase y matriz de confusión. |
 | `tiempo_real.py` | Evaluación en vivo con la webcam. |
 | `importar_mendeley.py` | Importa el dataset de apoyo de Mendeley (manual, ver el propio archivo). |
 | `data/propios/<ejercicio>/<etiqueta>/<persona>/` | Videos del equipo (no van a Git, ver `.gitignore`). |
@@ -129,8 +168,9 @@ py -3.11 -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 
 .venv\Scripts\python Evaluador_Ejercicios.py extraer                       # videos -> características (CSV)
-.venv\Scripts\python Evaluador_Ejercicios.py entrenar                      # entrena los 3 MLP
-.venv\Scripts\python Evaluador_Ejercicios.py evaluar                       # métricas + matriz de confusión
+.venv\Scripts\python Evaluador_Ejercicios.py entrenar                      # entrena los 3 modelos
+.venv\Scripts\python Evaluador_Ejercicios.py evaluar                       # validación cruzada por serie
+.venv\Scripts\python Evaluador_Ejercicios.py evaluar --por-persona         # deja fuera a una persona a la vez
 .venv\Scripts\python Evaluador_Ejercicios.py tiempo-real --ejercicio sentadillas   # webcam en vivo
 ```
 
@@ -141,6 +181,13 @@ Cada subcomando acepta `--ejercicio {lagartijas,sentadillas,curl_biceps}`
 para correr sobre uno solo en vez de los 3 (`tiempo-real` lo requiere
 siempre, porque hay que decirle a la cámara qué ejercicio esperar).
 
-No hay notebook de Colab para esta práctica: el MLP entrena sobre un
+No hay notebook de Colab para esta práctica: el modelo entrena sobre un
 puñado de números por repetición — toma segundos en CPU, así que no hace
 falta GPU gratuita ni notebook aparte.
+
+**Cómo se mide**: `entrenar` usa todas las repeticiones porque el día de
+la entrega se prueba con las mismas personas del equipo. Las métricas que
+se reportan salen de `evaluar`, que entrena modelos nuevos dejando fuera
+series completas (videos), así nunca se prueba con un video que el modelo
+ya vio. `--por-persona` mide además qué tan bien generaliza a alguien
+nuevo.

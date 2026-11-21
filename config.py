@@ -46,6 +46,7 @@ MEDIAPIPE_MODELO_PATH = RUTA_MODELOS_MEDIAPIPE / "pose_landmarker_full.task"
 # el frente a la cámara), no está fijo a "izquierdo".
 
 PUNTOS = {
+    "nariz": (0, 0),  # punto único; sirve para saber hacia qué lado mira la persona
     "hombro": (11, 12),
     "codo": (13, 14),
     "muneca": (15, 16),
@@ -100,7 +101,7 @@ EJERCICIOS = {
         "angulos_clave": {
             "rodilla": ("cadera", "rodilla", "tobillo"),
         },
-        "senales_especiales": ["inclinacion_tronco", "talon_y_norm"],
+        "senales_especiales": ["inclinacion_tronco", "elevacion_talon"],
         "etiquetas": ["correcto", "no_bajar_suficiente", "inclinarse_demasiado", "talones_levantados"],
         # "rodillas hacia adentro" del póster requiere toma FRONTAL (valgo de rodilla no se
         # ve en vista lateral) y queda fuera de esta primera versión -- ver README, sección
@@ -122,25 +123,47 @@ LISTA_EJERCICIOS = list(EJERCICIOS.keys())
 
 VISIBILIDAD_MINIMA = 0.5  # por debajo de esto, MediaPipe no confía en el punto -> se descarta el frame
 
+# Se sube cada vez que cambia cómo se calculan las características. Las filas
+# del CSV con otra versión se ignoran al entrenar (hay que volver a correr
+# `extraer` para regenerarlas) -- mezclar versiones mezclaría señales que
+# significan cosas distintas.
+# v2: señales con signo independientes del lado hacia el que mira la persona,
+#     elevación de talón medida contra la punta del pie, sin duracion_frames
+#     (dependía de los FPS de cada celular), + secuencia temporal remuestreada.
+VERSION_CARACTERISTICAS = 2
+PUNTOS_SECUENCIA = 20  # muestras por señal al remuestrear cada repetición a largo fijo
+
+# Avisos de calidad al extraer: una serie de 6-8 repeticiones que da muchas
+# más o muchas menos suele ser mal encuadre, otra persona en cuadro o la
+# cámara moviéndose.
+REPS_POR_VIDEO_ESPERADAS = (3, 15)
+
 # =========================================================
 # HIPERPARÁMETROS DEL CLASIFICADOR (un MLP por ejercicio)
 # =========================================================
 
+# Ensamble CNN-1D (secuencias) + MLP (agregadas), ver modelo.py.
+# Número de épocas FIJO (sin early stopping): con tan pocas series por
+# clase, una partición de validación pequeña es demasiado ruidosa para
+# decidir cuándo parar; los valores de abajo se eligieron con validación
+# cruzada por serie. Regularización: dropout + weight decay + label smoothing.
 CAPAS_OCULTAS = [32, 16]
 DROPOUT = 0.3
-BATCH_SIZE = 16
-NUM_EPOCAS = 200
-TASA_APRENDIZAJE = 1e-3
-PACIENCIA_EARLY_STOPPING = 20
+BATCH_SIZE = 32
+NUM_EPOCAS = 150
+TASA_APRENDIZAJE = 3e-3
+WEIGHT_DECAY = 1e-2
+SUAVIZADO_ETIQUETAS = 0.1
 RANDOM_STATE = 42
 
-# Reparto de datos: agrupado por PERSONA, no por repetición individual, para
-# que las repeticiones de una misma persona no queden a la vez en train y en
-# prueba ("fuga" de datos: ejemplos muy parecidos -mismo cuerpo, misma
-# cámara, mismo día- en ambos lados inflarían las métricas sin que el
-# modelo esté generalizando de verdad).
-FRACCION_VALIDACION = 0.15
-FRACCION_PRUEBA = 0.15
+# Reparto de datos: agrupado por SERIE (video), no por repetición individual:
+# las repeticiones de un mismo video son casi idénticas, así que si quedaran
+# a la vez en train y en prueba las métricas saldrían infladas. Se agrupa por
+# serie y no por persona porque el día de la entrega el modelo se prueba con
+# las mismas 5 personas del equipo (todas deben estar en entrenamiento).
+# `entrenar --por-persona` hace además leave-one-person-out para medir qué
+# tan bien generaliza a alguien que nunca vio.
+FRACCION_PRUEBA = 0.25
 
 DISPOSITIVO = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

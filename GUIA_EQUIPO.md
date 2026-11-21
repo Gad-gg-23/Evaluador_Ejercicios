@@ -142,9 +142,20 @@ funcione, necesitas partir del CSV más reciente — por eso el `git pull` va
 ```powershell
 git pull                                                   # trae las características más recientes del equipo
 .venv\Scripts\python Evaluador_Ejercicios.py extraer       # tus videos -> se fusionan con el CSV del equipo
-.venv\Scripts\python Evaluador_Ejercicios.py entrenar      # entrena los 3 MLP con TODO el CSV (tú + equipo)
+.venv\Scripts\python Evaluador_Ejercicios.py entrenar      # entrena los 3 modelos con TODO el CSV (tú + equipo)
 .venv\Scripts\python Evaluador_Ejercicios.py evaluar       # revisa métricas y matriz de confusión en salidas/
 ```
+
+> **Versión 2 de las características (noviembre 2026):** se corrigieron
+> varias señales (ver README). Si `entrenar` dice *"se ignoran N filas
+> extraídas con una versión anterior… Tienen que volver a correr
+> `extraer`: [tu nombre]"*, haz `git pull` y vuelve a correr `extraer`
+> con tus videos. Tus filas viejas no sirven para el modelo nuevo.
+
+`extraer` también avisa con **REVISAR** si un video dio muy pocas o
+demasiadas repeticiones (se esperan 3 a 15). Revisa ese video: puede ser
+mal encuadre, otra persona en cuadro o el mismo video copiado con otro
+nombre.
 
 `extraer` imprime cuántas repeticiones detectó por video — si un video de
 8 repeticiones solo detecta 2 o 3, probablemente `caida_minima_grados` de
@@ -201,6 +212,5 @@ detectó. `q` para salir.
   (avisar al equipo antes de cambiarlos, afecta a todos).
 - **El modelo dice "correcto" a todo o se equivoca mucho**: normal con
   pocos videos. Hace falta más variedad (más personas, más series por
-  etiqueta) antes de confiar en las métricas — `entrenar.py` ya avisa
-  cuando hay muy pocas personas para una división train/val/prueba
-  confiable.
+  etiqueta) antes de confiar en las métricas. Revisa también que no
+  queden filas de la versión anterior (ver el aviso de `entrenar`).

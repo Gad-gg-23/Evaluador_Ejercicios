@@ -16,7 +16,6 @@ import time
 
 import cv2
 import pandas as pd
-import torch
 
 import caracteristicas
 import config
@@ -43,25 +42,14 @@ def cargar_modelo(ejercicio):
             f"No existe {ruta_modelo}. Corre primero extraer_caracteristicas.py y entrenar.py "
             f"para '{ejercicio}'."
         )
-    paquete = torch.load(ruta_modelo, map_location=config.DISPOSITIVO, weights_only=False)
-    red = modelo.ClasificadorRepeticion(len(paquete["columnas"]), len(paquete["etiquetas"])).to(config.DISPOSITIVO)
-    red.load_state_dict(paquete["state_dict"])
-    red.eval()
-    return red, paquete
+    return modelo.ModeloRepeticion.cargar(ruta_modelo)
 
 
-def clasificar_repeticion(red, paquete, frames_rep):
-    columnas, etiquetas = paquete["columnas"], paquete["etiquetas"]
-    agregadas = caracteristicas.agregar_repeticion(frames_rep)
-    fila = pd.Series(agregadas).reindex(columnas).fillna(0.0)
-    media = pd.Series(paquete["media"], index=columnas)
-    desviacion = pd.Series(paquete["desviacion"], index=columnas)
-    x = torch.tensor(((fila - media) / desviacion).values.astype("float32")).unsqueeze(0)
-    with torch.no_grad():
-        logits = red(x.to(config.DISPOSITIVO))
-        probs = torch.softmax(logits, dim=1).squeeze(0)
-        idx = int(probs.argmax())
-    return etiquetas[idx], float(probs[idx])
+def clasificar_repeticion(clasificador, frames_rep, ejercicio):
+    fila = pd.DataFrame([caracteristicas.agregar_repeticion(frames_rep, ejercicio)])
+    probs = clasificador.probabilidades(fila)[0]
+    idx = int(probs.argmax())
+    return clasificador.etiquetas[idx], float(probs[idx])
 
 
 def dibujar_esqueleto(frame, landmarks, ancho, alto):
@@ -82,7 +70,7 @@ def main():
 
     ejercicio = args.ejercicio
     cfg = config.EJERCICIOS[ejercicio]
-    red, paquete = cargar_modelo(ejercicio)
+    clasificador = cargar_modelo(ejercicio)
 
     detector = pose_utils.DetectorPose()
     segmentador = segmentacion.SegmentadorRepeticiones(cfg["caida_minima_grados"])
@@ -113,7 +101,7 @@ def main():
                     rep_completa = segmentador.agregar_frame(angulo_rep_actual, senales)
                     if rep_completa is not None and len(rep_completa) >= 3:
                         contador_reps += 1
-                        ultima_etiqueta, ultima_confianza = clasificar_repeticion(red, paquete, rep_completa)
+                        ultima_etiqueta, ultima_confianza = clasificar_repeticion(clasificador, rep_completa, ejercicio)
                         print(f"Repetición {contador_reps}: {ultima_etiqueta} ({ultima_confianza:.0%})")
 
             color = COLOR_OK if ultima_etiqueta == "correcto" else COLOR_ERROR

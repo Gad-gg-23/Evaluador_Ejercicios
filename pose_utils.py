@@ -116,6 +116,10 @@ def angulo_respecto_vertical(a, b):
     return math.degrees(math.acos(coseno))
 
 
+def distancia(a, b):
+    return math.hypot(b[0] - a[0], b[1] - a[1])
+
+
 def desviacion_perpendicular_normalizada(p, a, b):
     """
     Distancia con signo de p a la línea a-b, normalizada por la longitud a-b.
@@ -123,6 +127,10 @@ def desviacion_perpendicular_normalizada(p, a, b):
     signo negativo = "abajo". Se usa para cadera caída/elevada en lagartijas:
     la sola distancia sin signo no distingue dirección.
     """
+    # a y b se ordenan de izquierda a derecha: si no, el signo se invierte
+    # según si la persona tiene la cabeza a la izquierda o a la derecha del cuadro.
+    if b[0] < a[0]:
+        a, b = b, a
     ax, ay = a
     bx, by = b
     px, py = p

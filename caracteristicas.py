@@ -1,9 +1,17 @@
 """
 Traduce los landmarks de un frame a las señales numéricas de un ejercicio
 (ángulos de 3 puntos + señales especiales), y agrega las señales de todos
-los frames de una repetición en un solo vector de características para el
-clasificador (min/max/media/rango de cada señal).
+los frames de una repetición en:
+  - un vector de características (min/max/media/rango de cada señal), y
+  - la secuencia de cada señal remuestreada a config.PUNTOS_SECUENCIA puntos
+    (para modelos que miran la forma temporal de la repetición).
+
+Todas las señales con signo están expresadas respecto a hacia dónde mira la
+persona, no respecto a la imagen: grabar mirando a la izquierda o a la
+derecha tiene que dar los mismos números.
 """
+
+import numpy as np
 
 import config
 import pose_utils
@@ -20,11 +28,17 @@ def _puntos_necesarios(cfg):
             puntos.update(["hombro", "cadera", "tobillo"])
         elif especial == "inclinacion_tronco":
             puntos.update(["hombro", "cadera"])
-        elif especial == "talon_y_norm":
-            puntos.update(["cadera", "tobillo", "talon"])
+        elif especial == "elevacion_talon":
+            puntos.update(["rodilla", "tobillo", "talon", "pie"])
         elif especial == "codo_x_norm":
-            puntos.update(["hombro", "codo", "cadera"])
+            puntos.update(["nariz", "hombro", "codo", "cadera"])
     return puntos
+
+
+def senales_del_ejercicio(ejercicio):
+    """Nombres de las señales por frame que se agregan (sin la de segmentación, que repite un ángulo clave)."""
+    cfg = config.EJERCICIOS[ejercicio]
+    return list(cfg["angulos_clave"].keys()) + list(cfg.get("senales_especiales", []))
 
 
 def calcular_senales_frame(landmarks, ejercicio, ancho, alto):
@@ -57,55 +71,48 @@ def calcular_senales_frame(landmarks, ejercicio, ancho, alto):
             )
         elif especial == "inclinacion_tronco":
             senales["inclinacion_tronco"] = pose_utils.angulo_respecto_vertical(p("cadera"), p("hombro"))
-        elif especial == "talon_y_norm":
-            cadera_px, tobillo_px, talon_px = p("cadera"), p("tobillo"), p("talon")
-            largo_pierna = ((cadera_px[0] - tobillo_px[0]) ** 2 + (cadera_px[1] - tobillo_px[1]) ** 2) ** 0.5
-            senales["talon_y_norm"] = talon_px[1] / largo_pierna if largo_pierna else 0.0
+        elif especial == "elevacion_talon":
+            # Talón por encima de la punta del pie = positivo. Se normaliza con la
+            # espinilla (rodilla-tobillo), que no cambia de largo al bajar en la
+            # sentadilla (cadera-tobillo sí, y eso hacía que la señal midiera profundidad).
+            largo_espinilla = pose_utils.distancia(p("rodilla"), p("tobillo")) or 1.0
+            senales["elevacion_talon"] = (p("pie")[1] - p("talon")[1]) / largo_espinilla
         elif especial == "codo_x_norm":
-            senales["codo_x_norm"] = pose_utils.desplazamiento_horizontal_normalizado(
-                p("codo"),
-                p("hombro"),
-                abs(p("cadera")[1] - p("hombro")[1]) or 1.0,
-            )
+            # Positivo = codo por delante del hombro, sin importar hacia qué lado mira.
+            mirando = 1.0 if p("nariz")[0] >= p("hombro")[0] else -1.0
+            largo_torso = pose_utils.distancia(p("hombro"), p("cadera")) or 1.0
+            senales["codo_x_norm"] = mirando * (p("codo")[0] - p("hombro")[0]) / largo_torso
 
     return senales, lado, vis_min
 
 
-def agregar_repeticion(frames_senales):
+def agregar_repeticion(frames_senales, ejercicio):
     """
-    frames_senales: lista de dicts (una por frame de la repetición), todas
-    con las mismas claves. Regresa un solo dict plano:
-    {<señal>_min, <señal>_max, <señal>_media, <señal>_rango, duracion_frames}.
-
-    talon_y_norm es un caso especial: lo que importa es el ascenso del talón
-    DURANTE la repetición, no su altura absoluta (depende de la cámara), así
-    que aquí se resta la línea base (talón al inicio de la repetición).
+    frames_senales: lista de dicts (una por frame de la repetición). Regresa un
+    dict plano con <señal>_min/_max/_media/_rango y seq_<señal>_<i>.
     """
-    claves = frames_senales[0].keys()
-    caracteristicas = {"duracion_frames": len(frames_senales)}
-
-    for clave in claves:
-        valores = [f[clave] for f in frames_senales]
-        if clave == "talon_y_norm":
-            base = valores[0]
-            valores = [base - v for v in valores]  # positivo = talón subió respecto al inicio
-            clave = "despegue_talon"
-        caracteristicas[f"{clave}_min"] = min(valores)
-        caracteristicas[f"{clave}_max"] = max(valores)
-        caracteristicas[f"{clave}_media"] = sum(valores) / len(valores)
-        caracteristicas[f"{clave}_rango"] = max(valores) - min(valores)
-
-    return caracteristicas
+    resultado = {}
+    n = config.PUNTOS_SECUENCIA
+    for senal in senales_del_ejercicio(ejercicio):
+        valores = np.array([f[senal] for f in frames_senales], dtype=float)
+        resultado[f"{senal}_min"] = valores.min()
+        resultado[f"{senal}_max"] = valores.max()
+        resultado[f"{senal}_media"] = valores.mean()
+        resultado[f"{senal}_rango"] = valores.max() - valores.min()
+        remuestreada = np.interp(np.linspace(0, len(valores) - 1, n), np.arange(len(valores)), valores)
+        for i, v in enumerate(remuestreada):
+            resultado[f"seq_{senal}_{i}"] = v
+    return resultado
 
 
 def columnas_caracteristicas(ejercicio):
-    """Nombres de columnas numéricas que produce agregar_repeticion para este ejercicio,
-    en un orden fijo (necesario para que entrenar.py y tiempo_real.py usen el mismo orden)."""
-    cfg = config.EJERCICIOS[ejercicio]
-    senales = list(cfg["angulos_clave"].keys()) + ["_angulo_rep"]
-    for especial in cfg.get("senales_especiales", []):
-        senales.append("despegue_talon" if especial == "talon_y_norm" else especial)
-    columnas = ["duracion_frames"]
-    for s in senales:
+    """Columnas agregadas (min/max/media/rango), en orden fijo."""
+    columnas = []
+    for s in senales_del_ejercicio(ejercicio):
         columnas += [f"{s}_min", f"{s}_max", f"{s}_media", f"{s}_rango"]
     return columnas
+
+
+def columnas_secuencia(ejercicio):
+    """Columnas de la secuencia remuestreada, agrupadas por señal (señal-major)."""
+    return [f"seq_{s}_{i}" for s in senales_del_ejercicio(ejercicio) for i in range(config.PUNTOS_SECUENCIA)]

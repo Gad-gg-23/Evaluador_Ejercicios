@@ -1,0 +1,10 @@
+                         precision    recall  f1-score   support
+
+               correcto      0.833     0.625     0.714        16
+        balancear_torso      1.000     1.000     1.000        16
+       codo_se_adelanta      1.000     1.000     1.000        16
+no_completar_movimiento      0.700     0.875     0.778        16
+
+               accuracy                          0.875        64
+              macro avg      0.883     0.875     0.873        64
+           weighted avg      0.883     0.875     0.873        64

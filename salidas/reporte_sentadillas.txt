@@ -1,0 +1,10 @@
+                      precision    recall  f1-score   support
+
+            correcto      1.000     0.714     0.833        14
+ no_bajar_suficiente      0.722     0.812     0.765        16
+inclinarse_demasiado      1.000     1.000     1.000        15
+  talones_levantados      0.562     0.643     0.600        14
+
+            accuracy                          0.797        59
+           macro avg      0.821     0.792     0.800        59
+        weighted avg      0.821     0.797     0.802        59
